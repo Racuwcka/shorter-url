@@ -5,37 +5,36 @@ import (
 	"fmt"
 )
 
-type ShortenProvider interface {
-	AddShort(shortLink string, link string)
+type AddProvider interface {
+	Add(shortLink string, link string)
 	GetShort(link string) (string, bool)
 }
 
 type AddService struct {
-	name            string
-	shortenProvider ShortenProvider
+	name              string
+	shortenerProvider AddProvider
 }
 
-func NewAddService(shortenProvider ShortenProvider) *AddService {
+func NewAddService(shortenerProvider AddProvider) *AddService {
 	return &AddService{
-		name:            "shorter add service",
-		shortenProvider: shortenProvider,
+		name:              "shorter add service",
+		shortenerProvider: shortenerProvider,
 	}
 }
 
-func getShortLink(s string) string {
-	h := sha256.New()
-	h.Write([]byte(s))
-	return fmt.Sprintf("%s/%x", "http://localhost:8080", h.Sum(nil)[:8])
+func getShortLink(link string) string {
+	h := sha256.Sum256([]byte(link))
+	return fmt.Sprintf("%x", h[:6])
 }
 
 func (s AddService) Add(link string) string {
-	if value, ok := s.shortenProvider.GetShort(link); ok {
+	if value, ok := s.shortenerProvider.GetShort(link); ok {
 		return value
 	}
 
 	shortLink := getShortLink(link)
 
-	s.shortenProvider.AddShort(shortLink, link)
+	s.shortenerProvider.Add(shortLink, link)
 
 	return shortLink
 }

@@ -2,12 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
-)
-
-var (
-	errorEmptyLink = errors.New("incorrect Link")
 )
 
 type AddRequest struct {
@@ -34,7 +29,7 @@ type AddHandler struct {
 	Adder
 }
 
-func NewHandler(shorterAdder Adder) *AddHandler {
+func NewAddHandler(shorterAdder Adder) *AddHandler {
 	return &AddHandler{
 		name:  "short Link add handler",
 		Adder: shorterAdder,
@@ -65,5 +60,6 @@ func (h AddHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.WriteHeader(http.StatusCreated)
 	_, _ = w.Write(raw)
 }
