@@ -3,23 +3,32 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
-	"github.com/Racuwcka/shorter-url/cmd/closer"
 	"log"
 	"net/http"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/Racuwcka/shorter-url/internal/closer"
+	"github.com/Racuwcka/shorter-url/internal/config"
 	handlers2 "github.com/Racuwcka/shorter-url/pkg/handlers"
 	"github.com/Racuwcka/shorter-url/pkg/repositories"
 	services2 "github.com/Racuwcka/shorter-url/pkg/services"
 )
 
 const (
-	listenAddr      = "localhost:8080"
-	shutdownTimeout = 5 * time.Second
+	envLocal = "local"
+	envDev   = "dev"
+	envProd  = "prod"
 )
+
+type Config struct {
+	Env             string
+	Addr            string
+	ShutdownTimeout time.Duration
+}
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -30,16 +39,51 @@ func main() {
 	}
 }
 
+func loadConfig() *Config {
+	envConfig := config.LoadEnvFile(".env")
+
+	defaultEnv := envConfig.GetEnvString("env", "local")
+	defaultAddr := envConfig.GetEnvString("addr", "localhost:8080")
+	defaultShutdownTimeout := envConfig.GetEnvInt("shutdownTimeout", 5)
+
+	env := flag.String("env", defaultEnv, "the app env")
+	addr := flag.String("addr", defaultAddr, "the address to connect to")
+	shutdownTimeout := flag.Int("shutdownTimeout", defaultShutdownTimeout, "shutdownTimeout time")
+
+	flag.Parse()
+
+	return &Config{
+		Env:             *env,
+		Addr:            *addr,
+		ShutdownTimeout: time.Duration(*shutdownTimeout) * time.Second,
+	}
+}
+
 func runServer(ctx context.Context) error {
+	cfg := loadConfig()
 	var (
 		srv = &http.Server{
-			Addr: listenAddr,
+			Addr: cfg.Addr,
 		}
 		c = &closer.Closer{}
 	)
 
 	repo := repositories.NewShortenCache()
-	baseUrl := "http://localhost:8080"
+
+	var baseUrl string
+	fmt.Println(cfg)
+
+	switch cfg.Env {
+	case envLocal:
+		baseUrl = fmt.Sprintf("http://%s", cfg.Addr)
+	case envDev:
+		baseUrl = fmt.Sprintf("https://%s", cfg.Addr)
+	case envProd:
+		baseUrl = fmt.Sprintf("https://%s", cfg.Addr)
+	}
+
+	fmt.Println(baseUrl)
+
 	addHandler := handlers2.NewAddHandler(services2.NewAddService(repo))
 	http.HandleFunc("POST /api/v1/shorten", addHandler.Handle)
 
@@ -60,12 +104,12 @@ func runServer(ctx context.Context) error {
 		}
 	}()
 
-	log.Printf("listening on %s", listenAddr)
+	log.Printf("listening on %s", cfg.Addr)
 	<-ctx.Done()
 
 	log.Println("shutting down server gracefully")
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout*time.Second)
 	defer cancel()
 
 	if err := c.Close(shutdownCtx); err != nil {
