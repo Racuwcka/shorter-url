@@ -27,6 +27,7 @@ const (
 type Config struct {
 	Env             string
 	Addr            string
+	Capacity        int
 	ShutdownTimeout time.Duration
 }
 
@@ -45,10 +46,12 @@ func loadConfig() *Config {
 	defaultEnv := envConfig.GetEnvString("env", "local")
 	defaultAddr := envConfig.GetEnvString("addr", "localhost:8080")
 	defaultShutdownTimeout := envConfig.GetEnvInt("shutdownTimeout", 5)
+	defaultCapacityCache := envConfig.GetEnvInt("capacityCache", 1000)
 
 	env := flag.String("env", defaultEnv, "the app env")
 	addr := flag.String("addr", defaultAddr, "the address to connect to")
 	shutdownTimeout := flag.Int("shutdownTimeout", defaultShutdownTimeout, "shutdownTimeout time")
+	capacityCache := flag.Int("capacityCache", defaultCapacityCache, "capacity of cache")
 
 	flag.Parse()
 
@@ -56,6 +59,7 @@ func loadConfig() *Config {
 		Env:             *env,
 		Addr:            *addr,
 		ShutdownTimeout: time.Duration(*shutdownTimeout) * time.Second,
+		Capacity:        *capacityCache,
 	}
 }
 
@@ -68,10 +72,9 @@ func runServer(ctx context.Context) error {
 		c = &closer.Closer{}
 	)
 
-	repo := repositories.NewShortenCache()
+	repo := repositories.NewShortenCache(cfg.Capacity)
 
 	var baseUrl string
-	fmt.Println(cfg)
 
 	switch cfg.Env {
 	case envLocal:
@@ -81,8 +84,6 @@ func runServer(ctx context.Context) error {
 	case envProd:
 		baseUrl = fmt.Sprintf("https://%s", cfg.Addr)
 	}
-
-	fmt.Println(baseUrl)
 
 	addHandler := handlers2.NewAddHandler(services2.NewAddService(repo))
 	http.HandleFunc("POST /api/v1/shorten", addHandler.Handle)
