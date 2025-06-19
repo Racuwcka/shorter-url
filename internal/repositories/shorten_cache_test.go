@@ -8,7 +8,7 @@ func TestLRUEviction(t *testing.T) {
 	cache.Add("b", "2")
 	cache.Add("c", "3")
 
-	if _, ok := cache.GetOriginal("a"); ok {
+	if _, err := cache.GetOriginal("a"); err != nil {
 		t.Error("Expected 'a' to be evicted")
 	}
 }

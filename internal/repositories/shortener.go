@@ -2,7 +2,13 @@ package repositories
 
 import (
 	"container/list"
+	"errors"
 	"sync"
+)
+
+var (
+	errNotFoundOriginalLink = errors.New("not found original shortener")
+	errNotFoundShortLink    = errors.New("not found short shortener")
 )
 
 type ShortenerCache struct {
@@ -59,26 +65,26 @@ func (s *ShortenerCache) Add(shortLink string, originalLink string) {
 	s.originalToShort[originalLink] = elem
 }
 
-func (s *ShortenerCache) GetShort(link string) (string, bool) {
+func (s *ShortenerCache) GetShort(link string) (string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if elem, exists := s.originalToShort[link]; exists {
 		go s.updateLRU(elem)
-		return elem.Value.(*cacheItem).shortKey, true
+		return elem.Value.(*cacheItem).shortKey, nil
 	}
 
-	return "", false
+	return "", errNotFoundShortLink
 }
 
-func (s *ShortenerCache) GetOriginal(shortLink string) (string, bool) {
+func (s *ShortenerCache) GetOriginal(shortLink string) (string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if elem, exists := s.shortToOriginal[shortLink]; exists {
 		go s.updateLRU(elem)
-		return elem.Value.(*cacheItem).originalKey, true
+		return elem.Value.(*cacheItem).originalKey, nil
 	}
 
-	return "", false
+	return "", errNotFoundOriginalLink
 }
 
 func (s *ShortenerCache) purge() {

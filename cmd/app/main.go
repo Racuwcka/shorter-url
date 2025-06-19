@@ -3,19 +3,24 @@ package main
 import (
 	"context"
 	"errors"
-	"flag"
 	"fmt"
+	"github.com/Racuwcka/shorter-url/internal/handler/shortener/original"
+	"github.com/Racuwcka/shorter-url/internal/handler/shortener/short"
+	add2 "github.com/Racuwcka/shorter-url/internal/services/add"
+	original2 "github.com/Racuwcka/shorter-url/internal/services/original"
+	redirect2 "github.com/Racuwcka/shorter-url/internal/services/redirect"
+	short2 "github.com/Racuwcka/shorter-url/internal/services/short"
 	"log"
 	"net/http"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/Racuwcka/shorter-url/internal/closer"
 	"github.com/Racuwcka/shorter-url/internal/config"
-	handlers2 "github.com/Racuwcka/shorter-url/pkg/handlers"
-	"github.com/Racuwcka/shorter-url/pkg/repositories"
-	services2 "github.com/Racuwcka/shorter-url/pkg/services"
+	"github.com/Racuwcka/shorter-url/internal/handler/shortener/add"
+	"github.com/Racuwcka/shorter-url/internal/handler/shortener/redirect"
+	"github.com/Racuwcka/shorter-url/internal/repositories"
+	"github.com/Racuwcka/shorter-url/pkg/closer"
 )
 
 const (
@@ -23,13 +28,6 @@ const (
 	envDev   = "dev"
 	envProd  = "prod"
 )
-
-type Config struct {
-	Env             string
-	Addr            string
-	Capacity        int
-	ShutdownTimeout time.Duration
-}
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -40,39 +38,14 @@ func main() {
 	}
 }
 
-func loadConfig() *Config {
-	envConfig := config.LoadEnvFile(".env")
-
-	defaultEnv := envConfig.GetEnvString("env", "local")
-	defaultAddr := envConfig.GetEnvString("addr", "localhost:8080")
-	defaultShutdownTimeout := envConfig.GetEnvInt("shutdownTimeout", 5)
-	defaultCapacityCache := envConfig.GetEnvInt("capacityCache", 1000)
-
-	env := flag.String("env", defaultEnv, "the app env")
-	addr := flag.String("addr", defaultAddr, "the address to connect to")
-	shutdownTimeout := flag.Int("shutdownTimeout", defaultShutdownTimeout, "shutdownTimeout time")
-	capacityCache := flag.Int("capacityCache", defaultCapacityCache, "capacity of cache")
-
-	flag.Parse()
-
-	return &Config{
-		Env:             *env,
-		Addr:            *addr,
-		ShutdownTimeout: time.Duration(*shutdownTimeout) * time.Second,
-		Capacity:        *capacityCache,
-	}
-}
-
 func runServer(ctx context.Context) error {
-	cfg := loadConfig()
+	cfg := config.LoadConfig()
 	var (
 		srv = &http.Server{
 			Addr: cfg.Addr,
 		}
 		c = &closer.Closer{}
 	)
-
-	repo := repositories.NewShortenCache(cfg.Capacity)
 
 	var baseUrl string
 
@@ -85,16 +58,18 @@ func runServer(ctx context.Context) error {
 		baseUrl = fmt.Sprintf("https://%s", cfg.Addr)
 	}
 
-	addHandler := handlers2.NewAddHandler(services2.NewAddService(repo))
+	repo := repositories.NewShortenCache(cfg.Capacity)
+
+	addHandler := add.New(add2.New(baseUrl, repo))
 	http.HandleFunc("POST /api/v1/shorten", addHandler.Handle)
 
-	getShortHandler := handlers2.NewGetShortHandler(services2.NewGetShortService(baseUrl, repo))
+	getShortHandler := short.New(short2.NewGetShortService(baseUrl, repo))
 	http.HandleFunc("GET /api/v1/shorten", getShortHandler.Handle)
 
-	getOriginHandler := handlers2.NewGetOriginalHandler(services2.NewGetOriginalService(baseUrl, repo))
+	getOriginHandler := original.New(original2.NewGetOriginalService(baseUrl, repo))
 	http.HandleFunc("GET /api/v1/original", getOriginHandler.Handle)
 
-	getHandler := handlers2.NewGetHandler(services2.NewGetService(repo))
+	getHandler := redirect.New(redirect2.NewGetService(repo))
 	http.HandleFunc("GET /link/{shortID}", getHandler.Handle)
 
 	c.Add(srv.Shutdown)

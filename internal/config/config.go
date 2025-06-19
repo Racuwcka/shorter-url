@@ -1,57 +1,48 @@
 package config
 
 import (
-	"bufio"
-	"os"
-	"strconv"
-	"strings"
+	"flag"
+	"time"
+
+	"github.com/Racuwcka/shorter-url/pkg/config"
 )
 
-type EnvFile struct {
-	data map[string]string
+type Config struct {
+	Env string `env-default:"local"`
+	HTTPServer
+	Cache
 }
 
-func LoadEnvFile(filename string) *EnvFile {
-	env := &EnvFile{
-		data: make(map[string]string),
-	}
-
-	file, err := os.Open(filename)
-	if err != nil {
-		return env
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-
-		parts := strings.SplitN(line, "=", 2)
-		if len(parts) == 2 {
-			key := strings.ToLower(strings.TrimSpace(parts[0]))
-			value := strings.TrimSpace(parts[1])
-			env.data[key] = value
-		}
-	}
-
-	return env
+type HTTPServer struct {
+	Addr string `env-default:"localhost:8080"`
 }
 
-func (e *EnvFile) GetEnvString(key string, defaultValue string) string {
-	if value, exists := e.data[key]; exists {
-		return value
-	}
-	return defaultValue
+type Cache struct {
+	Capacity        int           `env-default:"1000"`
+	ShutdownTimeout time.Duration `env-default:"5"`
 }
 
-func (e *EnvFile) GetEnvInt(key string, defaultValue int) int {
-	if value, exists := e.data[key]; exists {
-		if intValue, err := strconv.Atoi(value); err == nil {
-			return intValue
-		}
+func LoadConfig() *Config {
+	envConfig := config.LoadEnvFile(".env")
+
+	defaultEnv := envConfig.GetEnvString("env", "local")
+	defaultAddr := envConfig.GetEnvString("addr", "localhost:8080")
+	defaultShutdownTimeout := envConfig.GetEnvInt("shutdownTimeout", 5)
+	defaultCapacityCache := envConfig.GetEnvInt("capacityCache", 1000)
+
+	env := flag.String("env", defaultEnv, "the app env")
+	addr := flag.String("addr", defaultAddr, "the address to connect to")
+	shutdownTimeout := flag.Int("shutdownTimeout", defaultShutdownTimeout, "shutdownTimeout time")
+	capacityCache := flag.Int("capacityCache", defaultCapacityCache, "capacity of cache")
+
+	flag.Parse()
+
+	return &Config{
+		Env:        *env,
+		HTTPServer: HTTPServer{Addr: *addr},
+		Cache: Cache{
+			ShutdownTimeout: time.Duration(*shutdownTimeout) * time.Second,
+			Capacity:        *capacityCache,
+		},
 	}
-	return defaultValue
 }
