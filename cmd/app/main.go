@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"github.com/Racuwcka/shorter-url/internal/handler/shortener/original"
 	"github.com/Racuwcka/shorter-url/internal/handler/shortener/short"
-	add2 "github.com/Racuwcka/shorter-url/internal/services/add"
-	original2 "github.com/Racuwcka/shorter-url/internal/services/original"
-	redirect2 "github.com/Racuwcka/shorter-url/internal/services/redirect"
-	short2 "github.com/Racuwcka/shorter-url/internal/services/short"
+	add2 "github.com/Racuwcka/shorter-url/internal/service/add"
+	original2 "github.com/Racuwcka/shorter-url/internal/service/original"
+	redirect2 "github.com/Racuwcka/shorter-url/internal/service/redirect"
+	short2 "github.com/Racuwcka/shorter-url/internal/service/short"
+	"github.com/Racuwcka/shorter-url/internal/storage/cache"
 	"log"
 	"net/http"
 	"os/signal"
@@ -19,7 +20,6 @@ import (
 	"github.com/Racuwcka/shorter-url/internal/config"
 	"github.com/Racuwcka/shorter-url/internal/handler/shortener/add"
 	"github.com/Racuwcka/shorter-url/internal/handler/shortener/redirect"
-	"github.com/Racuwcka/shorter-url/internal/repositories"
 	"github.com/Racuwcka/shorter-url/pkg/closer"
 )
 
@@ -58,7 +58,7 @@ func runServer(ctx context.Context) error {
 		baseUrl = fmt.Sprintf("https://%s", cfg.Addr)
 	}
 
-	repo := repositories.NewShortenCache(cfg.Capacity)
+	repo := cache.NewShortenCache(cfg.Capacity)
 
 	addHandler := add.New(add2.New(baseUrl, repo))
 	http.HandleFunc("POST /api/v1/shorten", addHandler.Handle)

@@ -6,15 +6,15 @@ import (
 	"github.com/Racuwcka/shorter-url/internal/handler/shortener"
 )
 
-type getter interface {
+type getterService interface {
 	Get(shortLink string) (string, error)
 }
 
 type Handler struct {
-	g getter
+	g getterService
 }
 
-func New(getter getter) *Handler {
+func New(getter getterService) *Handler {
 	return &Handler{
 		g: getter,
 	}

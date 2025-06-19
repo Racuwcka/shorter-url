@@ -7,15 +7,15 @@ import (
 	"github.com/Racuwcka/shorter-url/internal/handler/shortener"
 )
 
-type getter interface {
+type getterShortService interface {
 	GetShort(link string) (string, error)
 }
 
 type Handler struct {
-	g getter
+	g getterShortService
 }
 
-func New(getter getter) *Handler {
+func New(getter getterShortService) *Handler {
 	return &Handler{
 		g: getter,
 	}
@@ -23,7 +23,7 @@ func New(getter getter) *Handler {
 
 func (h Handler) Handle(w http.ResponseWriter, r *http.Request) {
 	link := r.URL.Query().Get("link")
-	req := &shortener.OriginalLinkRequest{
+	req := &shortener.LinkRequest{
 		Link: link,
 	}
 

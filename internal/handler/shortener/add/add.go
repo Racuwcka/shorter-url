@@ -7,22 +7,22 @@ import (
 	"github.com/Racuwcka/shorter-url/internal/handler/shortener"
 )
 
-type adder interface {
+type adderService interface {
 	Add(link string) string
 }
 
 type Handler struct {
-	a adder
+	a adderService
 }
 
-func New(adder adder) *Handler {
+func New(adder adderService) *Handler {
 	return &Handler{
 		a: adder,
 	}
 }
 
 func (h Handler) Handle(w http.ResponseWriter, r *http.Request) {
-	req := &shortener.OriginalLinkRequest{}
+	req := &shortener.LinkRequest{}
 	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
