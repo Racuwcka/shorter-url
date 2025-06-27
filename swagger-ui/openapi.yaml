@@ -1,0 +1,137 @@
+openapi: 3.0.3
+
+info:
+  title: Shortener
+  description: API Specification for Shortener
+  version: 0.0.1
+servers:
+  - url: http://localhost:8080
+tags:
+  - name: shortener
+    description: Manage link
+
+paths:
+  /api/v1/shorten:
+    post:
+      description: Добавление оригинальной и получение короткой ссылки
+      operationId: addLink
+      requestBody:
+        description: Оригинальная ссылка
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkRequest'
+      responses:
+        201:
+          description: Ссылка успешно добавлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShortLinkResponse'
+        400:
+          description: Плохой запрос
+        422:
+          description: Ошибка валидации
+        500:
+          description: Внутренняя ошибка сервера
+    get:
+      description: Получение короткой ссылки
+      operationId: getShortLink
+      parameters:
+        - name: link
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+      responses:
+        200:
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShortLinkResponse'
+        404:
+          description: Короткая ссылка не найдена
+        422:
+          description: Ошибка валидации
+        500:
+          description: Внутренняя ошибка сервера
+  /api/v1/original:
+    get:
+      description: Получение оригинальной ссылки
+      operationId: getOriginalLink
+      parameters:
+        - name: link
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+      responses:
+        200:
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OriginalLinkResponse'
+        404:
+          description: Короткая ссылка не найдена
+        422:
+          description: Ошибка валидации
+        500:
+          description: Внутренняя ошибка сервера
+  /link/{short_link_id}:
+    get:
+      description: 'Редирект на оригинальную ссылку'
+      operationId: redirect
+      parameters:
+        - name: short_link_id
+          in: path
+          description: Уникальный идентификатор короткой ссылки
+          required: true
+          schema:
+            type: string
+            example: "xi64gyo6v3"
+      responses:
+        '302':
+          description: Успешный редирект на оригинальный URL
+          headers:
+            Location:
+              description: Оригинальный URL для перенаправления
+              schema:
+                type: string
+                format: uri
+        422:
+          description: Ошибка валидации
+        500:
+          description: Внутренняя ошибка сервера
+components:
+  schemas:
+    LinkRequest:
+      type: object
+      required:
+        - link
+      properties:
+        link:
+          type: string
+          format: uri
+          description: Ссылка
+    ShortLinkResponse:
+      type: object
+      properties:
+        short_link:
+          type: string
+          format: uri
+    OriginalLinkResponse:
+      type: object
+      properties:
+        link:
+          type: string
+          format: uri
+
+
+
+
+

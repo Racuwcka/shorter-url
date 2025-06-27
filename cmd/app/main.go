@@ -4,13 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/Racuwcka/shorter-url/internal/handler/shortener/original"
-	"github.com/Racuwcka/shorter-url/internal/handler/shortener/short"
-	add2 "github.com/Racuwcka/shorter-url/internal/service/add"
-	original2 "github.com/Racuwcka/shorter-url/internal/service/original"
-	redirect2 "github.com/Racuwcka/shorter-url/internal/service/redirect"
-	short2 "github.com/Racuwcka/shorter-url/internal/service/short"
-	"github.com/Racuwcka/shorter-url/internal/storage/cache"
 	"log"
 	"net/http"
 	"os/signal"
@@ -19,7 +12,14 @@ import (
 
 	"github.com/Racuwcka/shorter-url/internal/config"
 	"github.com/Racuwcka/shorter-url/internal/handler/shortener/add"
+	"github.com/Racuwcka/shorter-url/internal/handler/shortener/original"
 	"github.com/Racuwcka/shorter-url/internal/handler/shortener/redirect"
+	"github.com/Racuwcka/shorter-url/internal/handler/shortener/short"
+	addService "github.com/Racuwcka/shorter-url/internal/service/add"
+	originalService "github.com/Racuwcka/shorter-url/internal/service/original"
+	redirectService "github.com/Racuwcka/shorter-url/internal/service/redirect"
+	shortService "github.com/Racuwcka/shorter-url/internal/service/short"
+	"github.com/Racuwcka/shorter-url/internal/storage/cache"
 	"github.com/Racuwcka/shorter-url/pkg/closer"
 )
 
@@ -58,18 +58,24 @@ func runServer(ctx context.Context) error {
 		baseUrl = fmt.Sprintf("https://%s", cfg.Addr)
 	}
 
+	http.Handle("/swagger/", http.StripPrefix("/swagger/", http.FileServer(http.Dir("./../../swagger-ui"))))
+
+	http.HandleFunc("/swagger", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/swagger/swagger.html", http.StatusFound)
+	})
+
 	repo := cache.NewShortenCache(cfg.Capacity)
 
-	addHandler := add.New(add2.New(baseUrl, repo))
+	addHandler := add.New(addService.New(baseUrl, repo))
 	http.HandleFunc("POST /api/v1/shorten", addHandler.Handle)
 
-	getShortHandler := short.New(short2.NewGetShortService(baseUrl, repo))
+	getShortHandler := short.New(shortService.NewGetShortService(baseUrl, repo))
 	http.HandleFunc("GET /api/v1/shorten", getShortHandler.Handle)
 
-	getOriginHandler := original.New(original2.NewGetOriginalService(baseUrl, repo))
+	getOriginHandler := original.New(originalService.NewGetOriginalService(baseUrl, repo))
 	http.HandleFunc("GET /api/v1/original", getOriginHandler.Handle)
 
-	getHandler := redirect.New(redirect2.NewGetService(repo))
+	getHandler := redirect.New(redirectService.NewGetService(repo))
 	http.HandleFunc("GET /link/{shortID}", getHandler.Handle)
 
 	c.Add(srv.Shutdown)
