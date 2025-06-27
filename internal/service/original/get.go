@@ -20,7 +20,7 @@ func NewGetOriginalService(baseUrl string, provider provider) *GetOriginalServic
 	}
 }
 
-func (s GetOriginalService) GetOriginal(shortLink string) (string, error) {
+func (s *GetOriginalService) GetOriginal(shortLink string) (string, error) {
 	uri := fmt.Sprintf("%s/link/", s.baseUrl)
 	shortLink = shortLink[len(uri):]
 

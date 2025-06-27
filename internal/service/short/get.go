@@ -18,7 +18,7 @@ func NewGetShortService(baseUrl string, provider provider) *GetShortService {
 	}
 }
 
-func (s GetShortService) GetShort(link string) (string, error) {
+func (s *GetShortService) GetShort(link string) (string, error) {
 	shortLink, err := s.p.GetShort(link)
 	if err != nil {
 		return shortLink, err

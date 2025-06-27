@@ -6,21 +6,21 @@ import (
 	"github.com/Racuwcka/shorter-url/internal/handler/shortener"
 )
 
-type getterService interface {
-	Get(shortLink string) (string, error)
+type getProvider interface {
+	GetOriginal(shortLink string) (string, error)
 }
 
 type Handler struct {
-	g getterService
+	g getProvider
 }
 
-func New(getter getterService) *Handler {
+func New(getter getProvider) *Handler {
 	return &Handler{
 		g: getter,
 	}
 }
 
-func (h Handler) Handle(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 	shortID := r.PathValue("shortID")
 	req := &shortener.ShortIDRequest{
 		ShortID: shortID,
@@ -31,7 +31,7 @@ func (h Handler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	link, err := h.g.Get(req.ShortID)
+	link, err := h.g.GetOriginal(req.ShortID)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return

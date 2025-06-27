@@ -21,7 +21,7 @@ func New(getter getterOriginalService) *Handler {
 	}
 }
 
-func (h Handler) Handle(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 	shortLink := r.URL.Query().Get("link")
 	req := &shortener.LinkRequest{
 		Link: shortLink,

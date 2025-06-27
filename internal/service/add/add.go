@@ -27,7 +27,7 @@ func generateShortHash(link string) string {
 	return fmt.Sprintf("%x", h[:6])
 }
 
-func (s Service) Add(link string) string {
+func (s *Service) Add(link string) string {
 	if value, err := s.p.GetShort(link); err == nil {
 		return value
 	}

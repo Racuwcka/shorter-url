@@ -17,7 +17,6 @@ import (
 	"github.com/Racuwcka/shorter-url/internal/handler/shortener/short"
 	addService "github.com/Racuwcka/shorter-url/internal/service/add"
 	originalService "github.com/Racuwcka/shorter-url/internal/service/original"
-	redirectService "github.com/Racuwcka/shorter-url/internal/service/redirect"
 	shortService "github.com/Racuwcka/shorter-url/internal/service/short"
 	"github.com/Racuwcka/shorter-url/internal/storage/cache"
 	"github.com/Racuwcka/shorter-url/pkg/closer"
@@ -75,7 +74,7 @@ func runServer(ctx context.Context) error {
 	getOriginHandler := original.New(originalService.NewGetOriginalService(baseUrl, repo))
 	http.HandleFunc("GET /api/v1/original", getOriginHandler.Handle)
 
-	getHandler := redirect.New(redirectService.NewGetService(repo))
+	getHandler := redirect.New(repo)
 	http.HandleFunc("GET /link/{shortID}", getHandler.Handle)
 
 	c.Add(srv.Shutdown)
