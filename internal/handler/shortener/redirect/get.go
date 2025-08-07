@@ -3,7 +3,7 @@ package redirect
 import (
 	"net/http"
 
-	"github.com/Racuwcka/shorter-url/internal/handler/shortener"
+	"github.com/Racuwcka/shorter-url/internal/handler/shortener/dto"
 )
 
 type getProvider interface {
@@ -21,8 +21,8 @@ func New(getter getProvider) *Handler {
 }
 
 func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
-	shortID := r.PathValue("shortID")
-	req := &shortener.ShortIDRequest{
+	shortID := r.PathValue("short_id")
+	req := &dto.ShortIDRequest{
 		ShortID: shortID,
 	}
 

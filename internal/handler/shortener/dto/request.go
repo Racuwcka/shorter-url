@@ -1,6 +1,10 @@
-package shortener
+package dto
 
-import "net/url"
+import (
+	"net/url"
+
+	"github.com/Racuwcka/shorter-url/internal/handler/shortener"
+)
 
 type LinkRequest struct {
 	Link string `json:"link"`
@@ -8,21 +12,21 @@ type LinkRequest struct {
 
 func (r *LinkRequest) Validate() error {
 	if r.Link == "" {
-		return errEmptyLink
+		return shortener.ErrEmptyLink
 	}
 	if _, err := url.ParseRequestURI(r.Link); err != nil {
-		return errInvalidURL
+		return shortener.ErrInvalidURL
 	}
 	return nil
 }
 
 type ShortIDRequest struct {
-	ShortID string
+	ShortID string `json:"short_id"`
 }
 
 func (r *ShortIDRequest) Validate() error {
 	if r.ShortID == "" {
-		return errEmptyLink
+		return shortener.ErrEmptyLink
 	}
 	return nil
 }

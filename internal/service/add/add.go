@@ -1,8 +1,7 @@
 package add
 
 import (
-	"crypto/sha256"
-	"fmt"
+	shortid "github.com/Racuwcka/shorter-url/internal/utils"
 )
 
 type provider interface {
@@ -10,31 +9,33 @@ type provider interface {
 	GetShort(link string) (string, error)
 }
 
+type linkShortener interface {
+	Generate(link string) string
+}
+
 type Service struct {
-	baseUrl string
-	p       provider
+	baseUrl   string
+	provider  provider
+	shortener linkShortener
 }
 
-func New(baseUrl string, provider provider) *Service {
+func New(baseUrl string, p provider, s linkShortener) *Service {
 	return &Service{
-		baseUrl: baseUrl,
-		p:       provider,
+		baseUrl:   baseUrl,
+		provider:  p,
+		shortener: s,
 	}
-}
-
-func generateShortHash(link string) string {
-	h := sha256.Sum256([]byte(link))
-	return fmt.Sprintf("%x", h[:6])
 }
 
 func (s *Service) Add(link string) string {
-	if value, err := s.p.GetShort(link); err == nil {
-		return value
+	shortID, err := s.provider.GetShort(link)
+	if err != nil {
+		shortID = s.shortener.Generate(link)
+
+		s.provider.Add(shortID, link)
+
+		return shortid.CreateShortLink(s.baseUrl, shortID)
 	}
 
-	shortLink := generateShortHash(link)
-
-	s.p.Add(shortLink, link)
-
-	return fmt.Sprintf("%s/link/%s", s.baseUrl, shortLink)
+	return shortid.CreateShortLink(s.baseUrl, shortID)
 }

@@ -4,41 +4,49 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/Racuwcka/shorter-url/internal/handler/shortener"
+	"github.com/Racuwcka/shorter-url/internal/handler/shortener/dto"
+	shortid "github.com/Racuwcka/shorter-url/internal/utils"
 )
 
-type getterOriginalService interface {
-	GetOriginal(shortLink string) (string, error)
+type provider interface {
+	GetOriginal(shortID string) (string, error)
 }
 
 type Handler struct {
-	g getterOriginalService
+	provider provider
 }
 
-func New(getter getterOriginalService) *Handler {
+func New(g provider) *Handler {
 	return &Handler{
-		g: getter,
+		provider: g,
 	}
 }
 
 func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 	shortLink := r.URL.Query().Get("link")
-	req := &shortener.LinkRequest{
-		Link: shortLink,
+
+	shortID, err := shortid.GetShortId(shortLink)
+	if err != nil {
+		http.Error(w, "short id not found", http.StatusBadRequest)
+		return
 	}
 
-	if err := req.Validate(); err != nil {
+	req := &dto.ShortIDRequest{
+		ShortID: shortID,
+	}
+
+	if err = req.Validate(); err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
 
-	link, err := h.g.GetOriginal(req.Link)
+	link, err := h.provider.GetOriginal(req.ShortID)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	res := &shortener.OriginalLinkResponse{
+	res := &dto.OriginalLinkResponse{
 		Link: link,
 	}
 

@@ -1,28 +1,30 @@
 package short
 
-import "fmt"
+import (
+	"github.com/Racuwcka/shorter-url/internal/utils"
+)
 
 type provider interface {
 	GetShort(link string) (string, error)
 }
 
 type GetShortService struct {
-	baseUrl string
-	p       provider
+	baseUrl  string
+	provider provider
 }
 
-func NewGetShortService(baseUrl string, provider provider) *GetShortService {
+func New(baseUrl string, p provider) *GetShortService {
 	return &GetShortService{
-		baseUrl: baseUrl,
-		p:       provider,
+		baseUrl:  baseUrl,
+		provider: p,
 	}
 }
 
 func (s *GetShortService) GetShort(link string) (string, error) {
-	shortLink, err := s.p.GetShort(link)
+	shortID, err := s.provider.GetShort(link)
 	if err != nil {
-		return shortLink, err
+		return shortID, err
 	}
 
-	return fmt.Sprintf("%s/link/%s", s.baseUrl, shortLink), nil
+	return shortid.CreateShortLink(s.baseUrl, shortID), nil
 }

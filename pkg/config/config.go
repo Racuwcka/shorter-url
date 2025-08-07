@@ -11,14 +11,14 @@ type EnvFile struct {
 	data map[string]string
 }
 
-func LoadEnvFile(filename string) *EnvFile {
+func LoadEnvFile(filename string) (*EnvFile, error) {
 	env := &EnvFile{
 		data: make(map[string]string),
 	}
 
 	file, err := os.Open(filename)
 	if err != nil {
-		return env
+		return env, err
 	}
 	defer file.Close()
 
@@ -37,7 +37,7 @@ func LoadEnvFile(filename string) *EnvFile {
 		}
 	}
 
-	return env
+	return env, nil
 }
 
 func (e *EnvFile) GetEnvString(key string, defaultValue string) string {

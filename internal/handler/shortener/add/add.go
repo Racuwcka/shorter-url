@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/Racuwcka/shorter-url/internal/handler/shortener"
+	"github.com/Racuwcka/shorter-url/internal/handler/shortener/dto"
 )
 
 type adderService interface {
@@ -12,17 +12,17 @@ type adderService interface {
 }
 
 type Handler struct {
-	a adderService
+	adderService adderService
 }
 
-func New(adder adderService) *Handler {
+func New(a adderService) *Handler {
 	return &Handler{
-		a: adder,
+		adderService: a,
 	}
 }
 
 func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
-	req := &shortener.LinkRequest{}
+	req := &dto.LinkRequest{}
 	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -32,9 +32,9 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
-	shortLink := h.a.Add(req.Link)
+	shortLink := h.adderService.Add(req.Link)
 
-	res := &shortener.ShortLinkResponse{
+	res := &dto.ShortLinkResponse{
 		ShortLink: shortLink,
 	}
 

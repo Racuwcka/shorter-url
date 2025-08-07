@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/Racuwcka/shorter-url/internal/handler/shortener"
+	"github.com/Racuwcka/shorter-url/internal/handler/shortener/dto"
 )
 
 type getterShortService interface {
@@ -23,7 +23,7 @@ func New(getter getterShortService) *Handler {
 
 func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 	link := r.URL.Query().Get("link")
-	req := &shortener.LinkRequest{
+	req := &dto.LinkRequest{
 		Link: link,
 	}
 
@@ -38,7 +38,7 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := &shortener.ShortLinkResponse{
+	res := &dto.ShortLinkResponse{
 		ShortLink: shortLink,
 	}
 

@@ -2,25 +2,26 @@ package app
 
 import (
 	"context"
-	"github.com/Racuwcka/shorter-url/internal/router"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/Racuwcka/shorter-url/internal/config"
+	"github.com/Racuwcka/shorter-url/internal/router"
 	"github.com/Racuwcka/shorter-url/pkg/closer"
 )
 
 func Run(ctx context.Context) error {
-	cfg := config.LoadConfig()
-	c := &closer.Closer{}
+	cfg := config.MustLoadConfig()
+	shutdowner := &closer.Closer{}
 
+	addr := ":" + cfg.Port
 	srv := &http.Server{
-		Addr:    cfg.Addr,
+		Addr:    addr,
 		Handler: router.New(cfg),
 	}
 
-	c.Add(srv.Shutdown)
+	shutdowner.Add(srv.Shutdown)
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -28,13 +29,11 @@ func Run(ctx context.Context) error {
 		}
 	}()
 
-	log.Printf("listening on %s", cfg.Addr)
-
 	<-ctx.Done()
 	log.Println("shutting down server gracefully")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout*time.Second)
 	defer cancel()
 
-	return c.Close(shutdownCtx)
+	return shutdowner.Close(shutdownCtx)
 }

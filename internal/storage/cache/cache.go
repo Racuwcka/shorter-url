@@ -4,6 +4,8 @@ import (
 	"container/list"
 	"errors"
 	"sync"
+
+	"github.com/Racuwcka/shorter-url/internal/storage"
 )
 
 var (
@@ -17,24 +19,32 @@ type ShortenerCache struct {
 	shortToOriginal map[string]*list.Element
 	originalToShort map[string]*list.Element
 	queue           *list.List
+	purgeSignal     chan struct{}
 }
+
+var _ storage.Storage = (*ShortenerCache)(nil)
 
 type cacheItem struct {
 	shortKey    string
 	originalKey string
 }
 
-func NewShortenCache(cap int) *ShortenerCache {
+func NewCache(cap int) *ShortenerCache {
 	if cap <= 0 {
 		cap = 1000
 	}
 
-	return &ShortenerCache{
+	c := &ShortenerCache{
 		capacity:        cap,
 		shortToOriginal: make(map[string]*list.Element),
 		originalToShort: make(map[string]*list.Element),
 		queue:           list.New(),
+		purgeSignal:     make(chan struct{}, 1),
 	}
+
+	go c.purgeWorker()
+
+	return c
 }
 
 func (s *ShortenerCache) Add(shortLink string, originalLink string) {
@@ -52,7 +62,10 @@ func (s *ShortenerCache) Add(shortLink string, originalLink string) {
 	}
 
 	if s.queue.Len() == s.capacity {
-		s.purge()
+		select {
+		case s.purgeSignal <- struct{}{}:
+		default:
+		}
 	}
 
 	item := &cacheItem{
@@ -76,15 +89,23 @@ func (s *ShortenerCache) GetShort(link string) (string, error) {
 	return "", errNotFoundShortLink
 }
 
-func (s *ShortenerCache) GetOriginal(shortLink string) (string, error) {
+func (s *ShortenerCache) GetOriginal(shortID string) (string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	if elem, exists := s.shortToOriginal[shortLink]; exists {
+	if elem, exists := s.shortToOriginal[shortID]; exists {
 		go s.updateLRU(elem)
 		return elem.Value.(*cacheItem).originalKey, nil
 	}
 
 	return "", errNotFoundOriginalLink
+}
+
+func (s *ShortenerCache) purgeWorker() {
+	for range s.purgeSignal {
+		s.mu.Lock()
+		s.purge()
+		s.mu.Unlock()
+	}
 }
 
 func (s *ShortenerCache) purge() {
