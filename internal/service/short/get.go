@@ -1,7 +1,7 @@
 package short
 
 import (
-	"github.com/Racuwcka/shorter-url/internal/utils"
+	"github.com/Racuwcka/shorter-url/internal/utils/shortlink"
 )
 
 type provider interface {
@@ -26,5 +26,5 @@ func (s *GetShortService) GetShort(link string) (string, error) {
 		return shortID, err
 	}
 
-	return shortid.CreateShortLink(s.baseUrl, shortID), nil
+	return shortlink.Create(s.baseUrl, shortID), nil
 }

@@ -2,11 +2,10 @@ package shortid
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 )
 
-func GetShortId(link string) (string, error) {
+func Get(link string) (string, error) {
 	index := strings.Index(link, "/link/")
 	if index == -1 {
 		return "", errors.New("url is not correct")
@@ -18,8 +17,4 @@ func GetShortId(link string) (string, error) {
 	}
 
 	return shortId, nil
-}
-
-func CreateShortLink(url string, shortID string) string {
-	return fmt.Sprintf("%s/link/%s", url, shortID)
 }
