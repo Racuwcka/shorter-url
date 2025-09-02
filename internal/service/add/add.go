@@ -1,7 +1,7 @@
 package add
 
 import (
-	shortid "github.com/Racuwcka/shorter-url/internal/utils"
+	"github.com/Racuwcka/shorter-url/internal/utils/shortlink"
 )
 
 type provider interface {
@@ -34,8 +34,8 @@ func (s *Service) Add(link string) string {
 
 		s.provider.Add(shortID, link)
 
-		return shortid.CreateShortLink(s.baseUrl, shortID)
+		return shortlink.Create(s.baseUrl, shortID)
 	}
 
-	return shortid.CreateShortLink(s.baseUrl, shortID)
+	return shortlink.Create(s.baseUrl, shortID)
 }

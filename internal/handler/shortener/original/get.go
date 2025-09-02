@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Racuwcka/shorter-url/internal/handler/shortener/dto"
-	shortid "github.com/Racuwcka/shorter-url/internal/utils"
+	"github.com/Racuwcka/shorter-url/internal/utils/shortid"
 )
 
 type provider interface {
@@ -25,7 +25,7 @@ func New(g provider) *Handler {
 func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 	shortLink := r.URL.Query().Get("link")
 
-	shortID, err := shortid.GetShortId(shortLink)
+	shortID, err := shortid.Get(shortLink)
 	if err != nil {
 		http.Error(w, "short id not found", http.StatusBadRequest)
 		return
