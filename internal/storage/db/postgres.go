@@ -13,7 +13,7 @@ type Repository struct {
 
 var _ storage.Storage = (*Repository)(nil)
 
-func NewRepository(c postgresql.Client) *Repository {
+func New(c postgresql.Client) *Repository {
 	return &Repository{
 		client: c,
 	}
