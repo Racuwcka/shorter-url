@@ -29,7 +29,7 @@ type cacheItem struct {
 	originalKey string
 }
 
-func NewCache(cap int) *ShortenerCache {
+func New(cap int) *ShortenerCache {
 	if cap <= 0 {
 		cap = 1000
 	}

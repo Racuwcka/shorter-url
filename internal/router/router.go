@@ -22,7 +22,7 @@ import (
 func New(cfg *config.Config) http.Handler {
 	mux := http.NewServeMux()
 
-	mux.Handle("/swagger/", http.StripPrefix("/swagger/", http.FileServer(http.Dir("./../../swagger-ui"))))
+	mux.Handle("/swagger/", http.StripPrefix("/swagger/", http.FileServer(http.Dir("./swagger-ui"))))
 	mux.HandleFunc("/swagger", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/swagger/swagger.html", http.StatusFound)
 	})
@@ -48,12 +48,12 @@ func buildBaseURL(cfg *config.Config) string {
 
 func getRepo(cfg *config.Config) storage.Storage {
 	if cfg.StorageType.IsMemory() {
-		return cache.NewCache(cfg.Capacity)
+		return cache.New(cfg.Capacity)
 	} else {
 		client, err := postgresql.NewClient()
 		if err != nil {
 			log.Fatalf("Postgresql is not running, err: %v", err)
 		}
-		return db.NewRepository(client)
+		return db.New(client)
 	}
 }

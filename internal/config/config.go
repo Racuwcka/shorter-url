@@ -27,7 +27,7 @@ type Cache struct {
 
 const fileEnv = ".env"
 
-func MustLoadConfig() *Config {
+func MustLoad() *Config {
 	envConfig, err := config.LoadEnvFile(fileEnv)
 	if err != nil {
 		log.Fatal(err)

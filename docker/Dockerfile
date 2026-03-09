@@ -13,6 +13,6 @@ FROM alpine:latest
 
 WORKDIR /app
 COPY --from=builder /app/app .
+COPY --from=builder /app/swagger-ui ./swagger-ui
 
-# Запуск приложения
 CMD ["./app"]
