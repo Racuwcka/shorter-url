@@ -34,6 +34,9 @@ func New(cfg *config.Config) http.Handler {
 	mux.HandleFunc("GET /api/v1/shorten", shortHandler.New(shortService.New(baseUrl, repo)).Handle)
 	mux.HandleFunc("GET /api/v1/original", originalHandler.New(repo).Handle)
 	mux.HandleFunc("GET /link/{short_id}", redirectHandler.New(repo).Handle)
+	mux.HandleFunc("GET /hello", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, "Hello!")
+	})
 
 	return mux
 }
