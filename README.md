@@ -24,9 +24,8 @@
 
 - **Go** (чистая архитектура)  
 - **PostgreSQL** (через `pgx`)  
-- **Docker / Docker Compose** (два файла: dev и prod)  
+- **Docker / Docker Compose**  
 - **oapi-codegen** (генерация кода из Swagger)  
-- **github.com/air-verse/air** (hot reload для разработки)  
 - **mockgen** (моки для тестов)  
 
 ---
@@ -47,7 +46,6 @@
 make swagger       # генерация кода из Swagger
 make cover         # тесты с покрытием
 make gen           # генерация моков
-make project/init  # первый запуск проекта (dev-среда)
-make docker/dev    # dev-среда
-make docker/prod   # prod-среда
+make project/init  # первый запуск
+make docker/up     # запустить контейнеры
 make docker/down   # остановить контейнеры

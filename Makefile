@@ -11,13 +11,10 @@ gen:
 	-destination=internal/storage/cache/mocks/mock_storage.go
 
 project/init:
-	docker compose up -d --build
-
-docker/dev:
 	docker compose up -d
 
-docker/prod:
-	docker compose -f docker-compose.yml up --build
+docker/up:
+	docker compose up -d
 
 docker/down:
 	docker compose down -v
